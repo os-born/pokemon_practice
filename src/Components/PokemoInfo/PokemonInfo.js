@@ -1,53 +1,54 @@
-import { Component } from 'react';
-import PokemonCard from '../PokemonCard/PokemonCard';
+import { useState, useEffect } from "react";
+import PokemonCard from "../PokemonCard/PokemonCard";
 
-class PokemonInfo extends Component {
-    state = {
-        
-        pokemon: null,
-        error: null,
-        status: 'idle'
+const PokemonInfo = ({ pokemonName }) => {
+  const [pokemon, setPokemon] = useState(null);
+  const [error, setError] = useState(null);
+  const [status, setStatus] = useState("idle");
+
+  useEffect(() => {
+    if (!pokemonName) {
+      return;
     }
-    
-    componentDidUpdate(prevProps, _prevState) {
-        const prevName = prevProps.pokemonName;
-        const nextName = this.props.pokemonName;
-
-        if (prevName !== nextName) {
-            console.log('Change Props');
-            
-            this.setState({status: 'pending'})
-            fetch(`https://pokeapi.co/api/v2/pokemon/${nextName}`)
-            .then(response =>{ 
-                if (response.ok) {
-                    return response.json()
-                }
-                return Promise.reject(new Error(`ERROR, no Pokemon's name like ${nextName}`))
-            })
-            .then(pokemon => this.setState({ pokemon, status: 'resolved'}))
-            .catch(error => this.setState({error, status: 'rejected'}))
+    setStatus("pending");
+    fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonName}`)
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
         }
-    }
+        return Promise.reject(
+          new Error(`ERROR, no Pokemon's name like ${pokemonName}`)
+        );
+      })
+      .then((pokemon) => {
+        setPokemon(pokemon);
+        setStatus("resolved");
+      })
+      .catch((error) => {
+        setError(error);
+        setStatus("rejected");
+      });
+  }, [pokemonName]);
 
-    render() {
-        const { pokemon, error, status } = this.state;
+  if (status === "idle") {
+    return <div> Enter Pokemon Name, please!</div>;
+  }
 
-        if (status === 'idle') {
-            return <div> Enter Pokemon Name, please!</div>
-        };
+  if (status === "pending") {
+    return <div>Loading . . . </div>;
+  }
 
-        if (status === 'pending') {
-            return <div>Loading  . . . </div>
-        };
+  if (status === "rejected") {
+    return <div>{error.message}</div>;
+  }
 
-        if (status === 'rejected') {
-            return <div>{error.message}</div>
-        };
-
-        if (status === 'resolved') {
-            return <div><PokemonCard pokemon={pokemon}/></div>
-        };
-    }
-}
+  if (status === "resolved") {
+    return (
+      <div>
+        <PokemonCard pokemon={pokemon} />
+      </div>
+    );
+  }
+};
 
 export default PokemonInfo;
